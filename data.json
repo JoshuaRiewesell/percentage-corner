@@ -1,6 +1,12 @@
 [
   {
     "country": "Deutschland",
+    "labels": {
+      "countryLabel": "Land",
+      "yearLabel": "Jahr",
+      "selectImageLabel": "Bild auswählen",
+      "downloadImageLabel": "Bild herunterladen"
+    },
     "text": "meines Jahrgangs wurden abgetrieben",
     "years": [
   { "1996": { "born": 796.013, "aborted": 119.710 } },
@@ -36,6 +42,12 @@
   },
   {
     "country": "England and Wales",
+    "labels": {
+      "countryLabel": "Country",
+      "yearLabel": "Year",
+      "selectImageLabel": "Select image",
+      "downloadImageLabel": "Download image"
+    },
     "text": "of my birth year were aborted",
     "years": [
   { "1968": { "born": 819.272, "aborted": 23.641 } },

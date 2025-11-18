@@ -87,18 +87,18 @@
 
     <div class="flex flex-col sm:flex-row gap-2 mb-4">
         <div class="flex-1">
-            <label for="countrySelect" class="block text-sm font-medium mb-1">Land</label>
+            <label id="countryLabel" for="countrySelect" class="block text-sm font-medium mb-1">Land</label>
             <select id="countrySelect" class="w-full border rounded-md p-2 text-sm">
             </select>
         </div>
         <div class="flex-1">
-            <label for="yearSelect" class="block text-sm font-medium mb-1">Jahr</label>
+            <label id="yearLabel" for="yearSelect" class="block text-sm font-medium mb-1">Jahr</label>
             <select id="yearSelect" class="w-full border rounded-md p-2 text-sm">
             </select>
         </div>
     </div>
 
-    <label class="block mb-2 text-sm font-medium">Bild auswählen</label>
+    <label id="imageLabel" class="block mb-2 text-sm font-medium">Bild auswählen</label>
     <input type="file" id="fileInput" class="w-full text-sm mb-4">
 
     <button id="downloadBtn" class="bg-blue-600 text-white p-2 rounded-md w-full font-semibold hidden mb-2 hover:bg-blue-700 transition-colors">Bild herunterladen</button>
@@ -162,13 +162,44 @@ function initWithData(loadedData){
             yearSelect.selectedIndex = yearSelect.options.length - 1; // latest year
         }
     }
+
+    // helper to update UI labels from country-specific labels object
+    function updateLabels(countryName){
+        const country = data.find(d => d.country === countryName);
+        const countryLabelEl = document.getElementById('countryLabel');
+        const yearLabelEl = document.getElementById('yearLabel');
+        const imageLabelEl = document.getElementById('imageLabel');
+        const downloadBtn = document.getElementById('downloadBtn');
+        // sensible defaults if labels are missing
+        const defaults = {
+            countryLabel: 'Land',
+            yearLabel: 'Jahr',
+            selectImageLabel: 'Bild auswählen',
+            downloadImageLabel: 'Bild herunterladen'
+        };
+        if(country && country.labels){
+            countryLabelEl.textContent = country.labels.countryLabel || defaults.countryLabel;
+            yearLabelEl.textContent = country.labels.yearLabel || defaults.yearLabel;
+            imageLabelEl.textContent = country.labels.selectImageLabel || defaults.selectImageLabel;
+            // if download button is hidden currently, keep text; otherwise update displayed text
+            downloadBtn.textContent = country.labels.downloadImageLabel || defaults.downloadImageLabel;
+        } else {
+            countryLabelEl.textContent = defaults.countryLabel;
+            yearLabelEl.textContent = defaults.yearLabel;
+            imageLabelEl.textContent = defaults.selectImageLabel;
+            downloadBtn.textContent = defaults.downloadImageLabel;
+        }
+    }
+
     if(countrySelect.options.length>0){
         countrySelect.selectedIndex = 0;
         populateYears(countrySelect.value);
+        updateLabels(countrySelect.value);
     }
     countrySelect.addEventListener("change",()=>{
         const prevYear = yearSelect.value;
         populateYears(countrySelect.value, prevYear);
+        updateLabels(countrySelect.value);
     });
 
     // ---------------------------
