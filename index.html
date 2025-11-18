@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Percentage Corner</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4 flex flex-col items-center min-h-screen">
+
+<!-- Card für Controls -->
+<div class="bg-white shadow-lg rounded-xl p-4 w-full max-w-md mb-4">
+    <h1 class="text-xl font-semibold mb-4 text-center">Percentage Corner</h1>
+    
+    <div class="flex flex-col sm:flex-row gap-2 mb-4">
+        <div class="flex-1">
+            <label for="countrySelect" class="block text-sm font-medium mb-1">Land</label>
+            <select id="countrySelect" class="w-full border rounded-md p-2 text-sm">
+            </select>
+        </div>
+        <div class="flex-1">
+            <label for="yearSelect" class="block text-sm font-medium mb-1">Jahr</label>
+            <select id="yearSelect" class="w-full border rounded-md p-2 text-sm">
+            </select>
+        </div>
+    </div>
+
+    <label class="block mb-2 text-sm font-medium">Bild auswählen</label>
+    <input type="file" id="fileInput" class="w-full text-sm mb-4">
+
+    <button id="downloadBtn" class="bg-blue-600 text-white p-2 rounded-md w-full font-semibold hidden mb-2 hover:bg-blue-700 transition-colors">Bild herunterladen</button>
+</div>
+
+<!-- Bildvorschau -->
+<div class="bg-white shadow-lg rounded-xl p-4 w-full max-w-md flex justify-center mb-4">
+    <img id="preview" class="rounded-md w-full" alt="Vorschau">
+</div>
+
+<!-- Canvas (unsichtbar) -->
+<canvas id="canvas" class="hidden"></canvas>
+
+<script>
+// ---------------------------
+// Daten extern laden (data.json)
+// ---------------------------
+let data = [];
+
+function initWithData(loadedData){
+    data = loadedData || [];
+
+    // ---------------------------
+    // Dropdowns füllen
+    // ---------------------------
+    const countrySelect = document.getElementById("countrySelect");
+    countrySelect.innerHTML = "";
+    data.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d.country;
+        opt.textContent = d.country;
+        countrySelect.appendChild(opt);
+    });
+
+    const yearSelect = document.getElementById("yearSelect");
+    function populateYears(countryName){
+        yearSelect.innerHTML = "";
+        const country = data.find(d => d.country === countryName);
+        if(!country) return;
+        country.years.forEach(y=>{
+            const year = Object.keys(y)[0];
+            const opt = document.createElement("option");
+            opt.value = year;
+            opt.textContent = year;
+            yearSelect.appendChild(opt);
+        });
+    }
+    if(countrySelect.options.length>0){
+        countrySelect.selectedIndex = 0;
+        populateYears(countrySelect.value);
+    }
+    countrySelect.addEventListener("change",()=>populateYears(countrySelect.value));
+
+    // ---------------------------
+    // Prozent berechnen
+    // ---------------------------
+    function getPercentage(countryName, year){
+        const country = data.find(d=>d.country===countryName);
+        if(!country) return 0;
+        const yearObj = country.years.find(y=>Object.keys(y)[0]==year);
+        if(!yearObj) return 0;
+        const values = yearObj[year];
+        if(!values || !('born' in values) || !('aborted' in values)) return 0;
+        return (values.aborted / (values.born + values.aborted)) * 100;
+    }
+    function getText(countryName){
+        const country = data.find(d=>d.country===countryName);
+        return country ? country.text : "";
+    }
+
+    // ---------------------------
+    // Bildverarbeitung
+    // ---------------------------
+    const fileInput = document.getElementById("fileInput");
+    const preview = document.getElementById("preview");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    fileInput.addEventListener("change", ()=>{
+        const file = fileInput.files[0];
+        if(!file) return;
+        const countrySelectEl = document.getElementById("countrySelect");
+        const yearSelectEl = document.getElementById("yearSelect");
+        const selectedCountry = countrySelectEl.value;
+        const selectedYear = yearSelectEl.value;
+        const percent = getPercentage(selectedCountry, selectedYear);
+        const overlayText = `${percent.toFixed(2)}% ${getText(selectedCountry)}`;
+
+        const img = new Image();
+        img.onload = ()=>{
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img,0,0);
+
+            // Rechteck
+            const totalArea = img.width*img.height;
+            const rectArea = totalArea*(percent/100);
+            const rectSize = Math.sqrt(rectArea);
+            const rectWidth = rectSize;
+            const rectHeight = rectSize;
+            const x = img.width - rectWidth;
+            const y = img.height - rectHeight;
+            ctx.fillStyle = "black";
+            ctx.fillRect(x,y,rectWidth,rectHeight);
+
+            // Text mehrzeilig
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            const fontSize = Math.max(10, rectHeight*0.12);
+            ctx.font = `${fontSize}px Arial`;
+            const words = overlayText.split(" ");
+            const lines = [];
+            let line = "";
+            words.forEach(w=>{
+                const testLine = line + w + " ";
+                if(ctx.measureText(testLine).width>rectWidth*0.9){
+                    lines.push(line);
+                    line=w+" ";
+                }else{line=testLine;}
+            });
+            lines.push(line);
+            const lineHeight = fontSize*1.2;
+            const startY = y + rectHeight/2 - (lines.length-1)*lineHeight/2;
+            lines.forEach((l,i)=>ctx.fillText(l.trim(),x+rectWidth/2,startY+i*lineHeight));
+
+            // Vorschau
+            preview.src = canvas.toDataURL("image/png");
+            preview.style.display="block";
+
+            // Download
+            downloadBtn.style.display="block";
+            downloadBtn.onclick=()=>{
+                const link = document.createElement("a");
+                link.download="bearbeitet.png";
+                link.href=canvas.toDataURL("image/png");
+                link.click();
+            };
+        };
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+// Laden der externen JSON-Datei und initialisieren
+fetch('data.json', {cache: 'no-cache'})
+    .then(r => {
+        if(!r.ok) throw new Error('Fehler beim Laden von data.json');
+        return r.json();
+    })
+    .then(d=>initWithData(d))
+    .catch(err=>{
+        console.error(err);
+        alert('Fehler beim Laden der Daten (data.json). Siehe Konsole.');
+    });
+</script>
+</body>
+</html>

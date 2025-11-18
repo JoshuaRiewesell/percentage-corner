@@ -1,0 +1,18 @@
+[
+  {
+    "country": "Deutschland",
+    "text": "meines Jahrgangs wurden abgetrieben",
+    "years": [
+      { "1950": { "born": 500000, "aborted": 10000 } },
+      { "1951": { "born": 510000, "aborted": 12000 } }
+    ]
+  },
+  {
+    "country": "France",
+    "text": "de ma cohorte ont été avortés",
+    "years": [
+      { "1950": { "born": 400000, "aborted": 8000 } },
+      { "1951": { "born": 420000, "aborted": 10000 } }
+    ]
+  }
+]
