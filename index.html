@@ -144,7 +144,7 @@ function initWithData(loadedData){
     });
 
     const yearSelect = document.getElementById("yearSelect");
-    function populateYears(countryName){
+    function populateYears(countryName, preserveYear){
         yearSelect.innerHTML = "";
         const country = data.find(d => d.country === countryName);
         if(!country) return;
@@ -155,12 +155,21 @@ function initWithData(loadedData){
             opt.textContent = year;
             yearSelect.appendChild(opt);
         });
+        // keep previous selection if present, otherwise select latest year
+        if(preserveYear && Array.from(yearSelect.options).some(o=>o.value===preserveYear)){
+            yearSelect.value = preserveYear;
+        } else if(yearSelect.options.length > 0){
+            yearSelect.selectedIndex = yearSelect.options.length - 1; // latest year
+        }
     }
     if(countrySelect.options.length>0){
         countrySelect.selectedIndex = 0;
         populateYears(countrySelect.value);
     }
-    countrySelect.addEventListener("change",()=>populateYears(countrySelect.value));
+    countrySelect.addEventListener("change",()=>{
+        const prevYear = yearSelect.value;
+        populateYears(countrySelect.value, prevYear);
+    });
 
     // ---------------------------
     // Prozent berechnen
@@ -189,6 +198,9 @@ function initWithData(loadedData){
     const ctx = canvas.getContext("2d");
     const downloadBtn = document.getElementById("downloadBtn");
 
+    // store last processed file so we can re-render when country/year change
+    let lastFile = null;
+
     // Hilfsfunktion: Zeige/verstecke die Vorschau nur wenn ein src vorhanden ist
     function updatePreviewVisibility(){
         if(preview.src && preview.src.trim() !== ""){
@@ -200,15 +212,9 @@ function initWithData(loadedData){
     // Initial sicherstellen
     updatePreviewVisibility();
 
-    fileInput.addEventListener("change", ()=>{
-        const file = fileInput.files[0];
-        if(!file){
-            // kein Bild ausgewählt -> Vorschau und Download-Button verbergen
-            preview.src = "";
-            updatePreviewVisibility();
-            downloadBtn.classList.add('hidden');
-            return;
-        }
+    // Reusable image processing function
+    function processFile(file){
+        if(!file) return;
         const countrySelectEl = document.getElementById("countrySelect");
         const yearSelectEl = document.getElementById("yearSelect");
         const selectedCountry = countrySelectEl.value;
@@ -217,9 +223,12 @@ function initWithData(loadedData){
         const overlayText = `${percent.toFixed(2)}% ${getText(selectedCountry)}`;
 
         const img = new Image();
+        const objectURL = URL.createObjectURL(file);
         img.onload = ()=>{
+            // ensure canvas matches image
             canvas.width = img.width;
             canvas.height = img.height;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
             ctx.drawImage(img,0,0);
 
             // Rechteck
@@ -265,8 +274,40 @@ function initWithData(loadedData){
                 link.href=canvas.toDataURL("image/png");
                 link.click();
             };
+
+            // cleanup URL to avoid memory leak
+            URL.revokeObjectURL(objectURL);
         };
-        img.src = URL.createObjectURL(file);
+        img.onerror = ()=>{
+            URL.revokeObjectURL(objectURL);
+            console.error('Fehler beim Laden des Bildes.');
+        };
+        img.src = objectURL;
+    }
+
+    fileInput.addEventListener("change", ()=>{
+        const file = fileInput.files[0];
+        if(!file){
+            // kein Bild ausgewählt -> Vorschau und Download-Button verbergen
+            preview.src = "";
+            updatePreviewVisibility();
+            downloadBtn.classList.add('hidden');
+            lastFile = null;
+            return;
+        }
+        // remember last file and process it
+        lastFile = file;
+        processFile(file);
+    });
+
+    // re-process when country or year changes if we have a selected file
+    const countrySelectEl = document.getElementById("countrySelect");
+    const yearSelectEl = document.getElementById("yearSelect");
+    countrySelectEl.addEventListener('change', ()=>{
+        if(lastFile) processFile(lastFile);
+    });
+    yearSelectEl.addEventListener('change', ()=>{
+        if(lastFile) processFile(lastFile);
     });
 }
 
