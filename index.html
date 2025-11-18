@@ -117,8 +117,17 @@
     <div class="modal-content" role="document">
       <button class="close-btn" aria-label="Close information">×</button>
       <h2>Sources</h2>
-      <div class="sources">- Deutschland 1996-2024 Statistisches Bundesamt
-- England and Wales 1968-2021 Office for Health Improvement and Disparities</div>
+      <div class="sources">- <b>Deutschland</b> 1996-2024 Statistisches Bundesamt
+- <b>England and Wales</b> 1968-2021 Office for Health Improvement and Disparities
+- <b>United States</b> 1990-2021 US Department of Health and Human Services (births) and Guttmacher Institute (abortions)
+
+Calculation: abortions / (abortions + births)
+
+Please note that miscariages are not included. Further the results do not show a percentage of people we would have more if we had less abortions.
+
+I am open for suggestions to improve this tool. Please let me know your <a target="_blank" href="https://docs.google.com/forms/d/e/1FAIpQLSctUcrK0N7HSyd-Csb1FevnrE8DE-GXn2uuqNFcab4ZWYRHyw/viewform?usp=publish-editor" class="underline text-blue-600">Feedback</a>.
+
+Website by Joshua Riewesell</div>
     </div>
   </div>
 
@@ -205,6 +214,16 @@ function initWithData(loadedData){
     // ---------------------------
     // Prozent berechnen
     // ---------------------------
+    // helper: parse numbers that may include thousand-point separators (e.g. "1.234.567") or comma decimals (e.g. "1,23")
+    function parseNumber(v){
+        if(typeof v === 'number') return v;
+        if(typeof v !== 'string') return 0;
+        // remove all dots used as thousand separators, then replace comma with dot for decimal part
+        const cleaned = v.replace(/\./g, '').replace(',', '.');
+        const n = parseFloat(cleaned);
+        return isNaN(n) ? 0 : n;
+    }
+
     function getPercentage(countryName, year){
         const country = data.find(d=>d.country===countryName);
         if(!country) return 0;
@@ -212,7 +231,11 @@ function initWithData(loadedData){
         if(!yearObj) return 0;
         const values = yearObj[year];
         if(!values || !('born' in values) || !('aborted' in values)) return 0;
-        return (values.aborted / (values.born + values.aborted)) * 100;
+        const born = parseNumber(values.born);
+        const aborted = parseNumber(values.aborted);
+        const total = born + aborted;
+        if(total === 0) return 0;
+        return (aborted / total) * 100;
     }
     function getText(countryName){
         const country = data.find(d=>d.country===countryName);
