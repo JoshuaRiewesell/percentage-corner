@@ -31,8 +31,8 @@
     <button id="downloadBtn" class="bg-blue-600 text-white p-2 rounded-md w-full font-semibold hidden mb-2 hover:bg-blue-700 transition-colors">Bild herunterladen</button>
 </div>
 
-<!-- Bildvorschau -->
-<div class="bg-white shadow-lg rounded-xl p-4 w-full max-w-md flex justify-center mb-4">
+<!-- Bildvorschau (versteckt, wenn leer) -->
+<div id="previewContainer" class="bg-white shadow-lg rounded-xl p-4 w-full max-w-md flex justify-center mb-4 hidden">
     <img id="preview" class="rounded-md w-full" alt="Vorschau">
 </div>
 
@@ -101,13 +101,31 @@ function initWithData(loadedData){
     // ---------------------------
     const fileInput = document.getElementById("fileInput");
     const preview = document.getElementById("preview");
+    const previewContainer = document.getElementById("previewContainer");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
     const downloadBtn = document.getElementById("downloadBtn");
 
+    // Hilfsfunktion: Zeige/verstecke die Vorschau nur wenn ein src vorhanden ist
+    function updatePreviewVisibility(){
+        if(preview.src && preview.src.trim() !== ""){
+            previewContainer.classList.remove('hidden');
+        } else {
+            previewContainer.classList.add('hidden');
+        }
+    }
+    // Initial sicherstellen
+    updatePreviewVisibility();
+
     fileInput.addEventListener("change", ()=>{
         const file = fileInput.files[0];
-        if(!file) return;
+        if(!file){
+            // kein Bild ausgewählt -> Vorschau und Download-Button verbergen
+            preview.src = "";
+            updatePreviewVisibility();
+            downloadBtn.classList.add('hidden');
+            return;
+        }
         const countrySelectEl = document.getElementById("countrySelect");
         const yearSelectEl = document.getElementById("yearSelect");
         const selectedCountry = countrySelectEl.value;
@@ -154,10 +172,10 @@ function initWithData(loadedData){
 
             // Vorschau
             preview.src = canvas.toDataURL("image/png");
-            preview.style.display="block";
+            updatePreviewVisibility();
 
             // Download
-            downloadBtn.style.display="block";
+            downloadBtn.classList.remove('hidden');
             downloadBtn.onclick=()=>{
                 const link = document.createElement("a");
                 link.download="bearbeitet.png";
