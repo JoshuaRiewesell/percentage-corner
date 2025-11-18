@@ -5,13 +5,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Percentage Corner</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* make the controls card the positioning context */
+    #controlsCard { position: relative; }
+
+    /* Info button in top-right of the controls card */
+    #info-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      border:none;
+      background: #ffffff;
+      color: #111111;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+        }
+    #info-btn svg { display: block; }
+    #info-btn:focus { outline: 2px solid rgba(59,130,246,0.25); outline-offset: 2px; }
+
+    /* Modal overlay and content */
+    #info-modal {
+      position: fixed;
+      inset: 0;
+      display: none; /* shown via JS */
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      padding: 20px;
+    }
+    #info-modal[data-open="true"] { display: flex; }
+
+    #info-modal .modal-content {
+      background: #fff;
+      color: #111;
+      max-width: 520px;
+      width: 100%;
+      border-radius: 8px;
+      padding: 18px 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      position: relative;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    #info-modal .modal-content h2 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+    }
+    #info-modal .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border: none;
+      background: transparent;
+      font-size: 18px;
+      cursor: pointer;
+      color: #333;
+    }
+    #info-modal .sources { white-space: pre-line; }
+  </style>
 </head>
 <body class="bg-gray-100 p-4 flex flex-col items-center min-h-screen">
 
 <!-- Card für Controls -->
-<div class="bg-white shadow-lg rounded-xl p-4 w-full max-w-md mb-4">
+<div id="controlsCard" class="bg-white shadow-lg rounded-xl p-4 w-full max-w-md mb-4">
     <h1 class="text-xl font-semibold mb-4 text-center">Percentage Corner</h1>
     
+    <!-- insert info button into the card -->
+    <button id="info-btn" aria-label="Open information" title="Information">
+      <!-- simple info glyph -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="0" fill="currentColor" opacity="0.12" />
+        <path d="M11 10h2v6h-2z" fill="currentColor"/>
+        <path d="M11 7h2v2h-2z" fill="currentColor"/>
+      </svg>
+    </button>
+
     <div class="flex flex-col sm:flex-row gap-2 mb-4">
         <div class="flex-1">
             <label for="countrySelect" class="block text-sm font-medium mb-1">Land</label>
@@ -38,6 +111,16 @@
 
 <!-- Canvas (unsichtbar) -->
 <canvas id="canvas" class="hidden"></canvas>
+
+  <!-- Modal markup -->
+  <div id="info-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content" role="document">
+      <button class="close-btn" aria-label="Close information">×</button>
+      <h2>Sources</h2>
+      <div class="sources">- Deutschland 1996-2024 Statistisches Bundesamt
+- England and Wales 1968-2021 Office for Health Improvement and Disparities</div>
+    </div>
+  </div>
 
 <script>
 // ---------------------------
@@ -198,6 +281,42 @@ fetch('data.json', {cache: 'no-cache'})
         console.error(err);
         alert('Fehler beim Laden der Daten (data.json). Siehe Konsole.');
     });
-</script>
+
+    // Minimal modal open/close logic
+    (function(){
+      var infoBtn = document.getElementById('info-btn');
+      var modal = document.getElementById('info-modal');
+      var closeBtn = modal && modal.querySelector('.close-btn');
+
+      function openModal(){
+        if(!modal) return;
+        modal.setAttribute('data-open','true');
+        modal.setAttribute('aria-hidden','false');
+        // focus management: focus close button
+        if(closeBtn) closeBtn.focus();
+      }
+      function closeModal(){
+        if(!modal) return;
+        modal.removeAttribute('data-open');
+        modal.setAttribute('aria-hidden','true');
+        if(infoBtn) infoBtn.focus();
+      }
+
+      if(infoBtn) infoBtn.addEventListener('click', function(e){ e.preventDefault(); openModal(); });
+      if(closeBtn) closeBtn.addEventListener('click', function(e){ e.preventDefault(); closeModal(); });
+
+      // click outside to close
+      if(modal) modal.addEventListener('click', function(e){
+        if(e.target === modal) closeModal();
+      });
+
+      // Escape key to close
+      document.addEventListener('keydown', function(e){
+        if(e.key === 'Escape' || e.key === 'Esc'){
+          if(modal && modal.getAttribute('data-open') === 'true') closeModal();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
