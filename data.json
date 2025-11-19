@@ -3,7 +3,7 @@
     "country": "Deutschland",
     "labels": {
       "countryLabel": "Land",
-      "yearLabel": "Jahr",
+      "yearLabel": "Geburtsjahr",
       "selectImageLabel": "Bild auswählen",
       "downloadImageLabel": "Bild herunterladen"
     },
