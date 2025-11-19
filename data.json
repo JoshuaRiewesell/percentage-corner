@@ -44,7 +44,7 @@
     "country": "England and Wales",
     "labels": {
       "countryLabel": "Country",
-      "yearLabel": "Year",
+      "yearLabel": "Year of birth",
       "selectImageLabel": "Select image",
       "downloadImageLabel": "Download image"
     },
@@ -110,7 +110,7 @@
     "country": "United States",
     "labels": {
       "countryLabel": "Country",
-      "yearLabel": "Year",
+      "yearLabel": "Year of birth",
       "selectImageLabel": "Select image",
       "downloadImageLabel": "Download image"
     },
